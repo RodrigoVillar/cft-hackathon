@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.0;
+
 import "../interfaces/IERC721.sol";
 
 /*
@@ -18,11 +21,9 @@ contract Vault {
     }
     
     // When callede, giveNFT gives NFT A to the owner of the vault
-    function giveNFT(address nftContract, int tokenID) {
-        // Instantiate ERC721 contract
-        IERC721 nftObject = IERC721(nftContract);
+    function sendNFT(address nftContract, uint tokenID) public {
         // Send NFT to Owner
-        nftObject.safe_tranfer_from(address(this), owner, tokenID);
+        IERC721(nftContract).safeTransferFrom(address(this), owner, tokenID);
     }
 
 }
