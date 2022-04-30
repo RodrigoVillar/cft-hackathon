@@ -3,12 +3,12 @@ Module that acts as the relayer for NFTEscrow
 
 List of all possible events, divided by its associated smart contract emitter
 
-franchise.sol:
+franchise.sol (multiple):
     - EscrowTXRecieved
     - NFTLocked
     - RefundComplete
 
-escrow.sol:
+escrow.sol (single):
     - NewEscrow
     - ReleaseEscrow
     - Refund
@@ -51,3 +51,7 @@ franchise_a_contract = w3_hub.eth.contract(address = w3_subnet_a.toChecksumAddre
 franchise_b_contract = w3_subnet_b.eth.contract(address = w3_subnet_b.toChecksumAddress(franchise_b_address), abi = franchise_abi)
 
 # INSERT RELAYER LOGIC HERE
+
+# Overall Object: relayer listens to events
+#   - Once relayer hears an event, it sends a transaction to the relevant
+#     subchain
