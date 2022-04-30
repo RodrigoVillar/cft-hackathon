@@ -128,7 +128,7 @@ contract Escrow {
         UserInfo memory userInfo2 = UserInfo(_user2, _nftContract2, _tokenID2, _subnet2);
 
         EscrowTX memory newEscrow = EscrowTX(userInfo1, userInfo2, false, false);
-        bytes32 hash = keccak256(abi.encode(newEscrow), block.number);
+        bytes32 hash = keccak256(abi.encode(newEscrow, block.number));
 
         require(escrowDirectory[hash].orderOne.user == address(0), "EscrowTX already exists!"); 
 
