@@ -25,23 +25,25 @@ contract Escrow {
     // Address of relayer
     address private relayer;
 
-    // Maps Escrow TX hashes to actual Escrow TX info
-    mapping(bytes32 => EscrowTX) private escrowDirectory;
+    // Maps Escrow TX index to actual Escrow TX info
+    mapping(uint => EscrowTX) private escrowDirectory;
 
     // Event to be emitted when new escrow tx is initiated
-    event NewEscrow(bytes32 indexed escrowHash);
+    event NewEscrow(uint indexed escrowHash);
 
     // Event to be emitted when both NFTs are locked up
-    event ReleaseEscrow(bytes32 indexed escrowHash);
+    event ReleaseEscrow(uint indexed escrowHash);
 
     // Event to be emitted when either Alice or Bob wish to cancel the trade
-    event Refund(bytes32 indexed escrowHash);
+    event Refund(uint indexed escrowHash);
 
     modifier isRelayer() {
         require(msg.sender == relayer, "You are not the relayer!");
         _;
     }
 
+    // Incremented each time a new transaction is made. Source of transaction ID
+    uint private nonce;
     // When initialized, contract sets argument as address of relayer
     constructor(address _relayer) {
         relayer = _relayer;
@@ -54,50 +56,48 @@ contract Escrow {
         UserInfo memory userInfo2 = UserInfo(_user2, _nftContract2, _tokenID2, _subnet2);
 
         EscrowTX memory newEscrow = EscrowTX(userInfo1, userInfo2, false, false);
-        bytes32 hash = keccak256(abi.encode(newEscrow, block.number));
 
-        require(escrowDirectory[hash].orderOne.user == address(0), "EscrowTX already exists!"); 
-
-        escrowDirectory[hash] = newEscrow;
-        emit NewEscrow(hash);
+        escrowDirectory[nonce] = newEscrow;
+        emit NewEscrow(nonce);
+        nonce++;
     }
 
-    function nftLocked(bytes32 _hash, address _user) public isRelayer {
-        EscrowTX memory localEscrow = escrowDirectory[_hash];
+    function nftLocked(uint txID, address _user) public isRelayer {
+        EscrowTX memory localEscrow = escrowDirectory[txID];
         require(localEscrow.orderOne.user == _user || localEscrow.orderTwo.user == _user, "Address not involved in Escrow TX!");
         if (localEscrow.orderOne.user == _user) {
             require(localEscrow.isReady1 == false, "NFT is already locked up!");
-            escrowDirectory[_hash].isReady1 = true;
+            escrowDirectory[txID].isReady1 = true;
         } else {
             require(localEscrow.isReady2 == false, "NFT is already locked up!");
-            escrowDirectory[_hash].isReady2 = true;
+            escrowDirectory[txID].isReady2 = true;
         }
 
-        if (escrowDirectory[_hash].isReady1 && escrowDirectory[_hash].isReady2) {
-            emit ReleaseEscrow(_hash);
-            delete escrowDirectory[_hash];
+        if (escrowDirectory[txID].isReady1 && escrowDirectory[txID].isReady2) {
+            emit ReleaseEscrow(txID);
+            delete escrowDirectory[txID];
         }
     }
 
     /*
     Function to call if either Alice or Bob want to call of the transaction
     */
-    function refund(bytes32 _hash) public {
+    function refund(uint txID) public {
         // Check that escrow TX exists
-        require(escrowDirectory[_hash].orderOne.user != address(0), "Invalid Hash!");
+        require(escrowDirectory[txID].orderOne.user != address(0), "Invalid Hash!");
         // Emit event
-        emit Refund(_hash); 
+        emit Refund(txID); 
         // Delete storage
-        delete escrowDirectory[_hash];
+        delete escrowDirectory[txID];
     }
 
     // Function that returns values of an escrow transaction. In particular, getEscrow 
     // returns all values related to _orderNum. As an example, if getEscrow(0x4, 0)
     // is called, then getEscrow returns Alice's UserInfo struct along with her
     // associated isReady boolean. Returns default values if hash is invalid
-    function getEscrow(bytes32 _hash, int _orderNum) public returns(address, address, uint, int, bool) {
+    function getEscrow(uint txID, int _orderNum) public returns(address, address, uint, int, bool) {
         // Retrieve escrow TX from memory
-        EscrowTX memory _localEscrow = escrowDirectory[_hash];
+        EscrowTX memory _localEscrow = escrowDirectory[txID];
         if (_orderNum == 0) {
             // Return Alice's Info
             return (_localEscrow.orderOne.user, _localEscrow.orderOne.nftContract, _localEscrow.orderOne.tokenID, _localEscrow.orderOne.subnet, _localEscrow.isReady1);

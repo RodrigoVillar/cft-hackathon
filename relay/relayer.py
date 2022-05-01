@@ -2,17 +2,18 @@
 NEED TO REWRITE FILE SO THAT ALL CODE IS BASICALLY ENCAPSULATED AS FUNCTIONS
 Module that acts as the relayer for NFTEscrow
 
-List of all possible events, divided by its associated smart contract emitter
+List of all relevant events, divided by its associated smart contract emitter
 
 franchise.sol (multiple):
-    - EscrowTXRecieved (one)
-    - NFTLocked (two)
-    - RefundComplete (three)
+    - NFTLocked 
 
 escrow.sol (single):
-    - NewEscrow (four)
-    - ReleaseEscrow (five)
-    - Refund (six)
+    - NewEscrow 
+    - ReleaseEscrow 
+    - Refund 
+
+SUBNET A = 0
+SUBNET B = 1
 """
 
 import secrets
@@ -23,8 +24,8 @@ from threading import Thread
 
 # Node URLs
 hub_url = "HTTP://127.0.0.1:7545"
-subnet_a_url = ""
-subnet_b_url = ""
+subnet_a_url = "HTTP://127.0.0.1:7545"
+subnet_b_url = "HTTP://127.0.0.1:7545"
 
 # Contract Addresses
 escrow_address = ""
@@ -75,41 +76,107 @@ newEscrow_filter = escrow_contract.events.NewEscrow.createFilter(fromBlock="late
 releaseEscrow_filter = escrow_contract.events.ReleaseEscrow.createFilter(fromBlock="latest")
 refund_filter = escrow_contract.events.Refund.createFilter(fromBlock="latest")
 
-escrowTXRecieved_1_filter = franchise_1_contract.events.EscrowTXRecieved.createFilter(fromBlock="latest")
-NFTLocked_1_filter = franchise_1_contract.events.NFTLocked.createFilter(from_block="latest")
-refundComplete_1_filter = franchise_1_contract.events.RefundComplete.createFilter(from_block="latest")
+NFTLocked_1_filter = franchise_1_contract.events.NFTLocked.createFilter(fromBlock="latest")
 
-escrowTXRecieved_2_filter = franchise_2_contract.events.EscrowTXRecieved.createFilter(fromBlock="latest")
-NFTLocked_2_filter = franchise_2_contract.events.NFTLocked.createFilter(from_block="latest")
-refundComplete_2_filter = franchise_2_contract.events.RefundComplete.createFilter(from_block="latest")
+NFTLocked_2_filter = franchise_2_contract.events.NFTLocked.createFilter(fromBlock="latest")
 
-def RefundComplete_executer(filter, subnet):
-    """
-    Function that executes in response to RefundComplete event
-    """
 
 def NFTLocked_executer(filter, subnet):
     """
     Function that executes in response to NFTLocked event
     """
+    while True:
+        for event in filter.get_new_entries():
+            hash = event["args"]["escrowHash"]
+            user = event["args"]["holder"]
+            transaction = {
+                            "gasPrice": w3_subnet_a.eth.gas_price,
+                            "chainId": 1337,
+                            "nonce": w3_hub.eth.get_transaction_count(w3_subnet_a.toChecksumAddress(relayer_address))
+                        }
+            # Unsigned tx
+            tx = escrow_contract.functions.nftLocked(hash, user).buildTransaction(transaction)
+            # Signed tx
+            signed_tx = w3_hub.eth.sign_transaction(tx, secret.relayer_private_key)
+            # Send signed tx
+            final_tx = w3_hub.eth.send_raw_transaction(signed_tx.rawTransaction)
 
-def escrowTXRecieved_executer(filter, subnet):
-    """
-    Function that executes in response to escrowTXRecieved event
-    """
-    pass
 
 def refund_executer(filter):
     """
     Function that executes in response to refund event
     """
-    pass
+    # Psuedo-code
+    # Event will emit hash that will used to call executeRefund() for each
+    # respective function; main hub will no longer have associated hash data in
+    # storage
+    while True:
+        for event in filter.get_new_entries():
+            hash = event["args"]["escrowHash"]
+            # Update Alice
+            transaction = {
+                            "gasPrice": w3_subnet_a.eth.gas_price,
+                            "chainId": 1337,
+                            "nonce": w3_subnet_a.eth.get_transaction_count(w3_subnet_a.toChecksumAddress(relayer_address))
+                        }
+            # tx_1 unsigned
+            tx_1 = franchise_1_contract.functions.executeRefund(hash).buildTransaction(transaction)
+            # Signed tx_1
+            signed_tx_1 = w3_subnet_a.eth.sign_transaction(tx_1, secret.relayer_private_key)
+            # Send signed_tx_1
+            final_tx_1 = w3_subnet_a.eth.send_raw_transaction(signed_tx_1.rawTransaction)
+
+            # Update Bob
+            transaction = {
+                            "gasPrice": w3_subnet_a.eth.gas_price,
+                            "chainId": 1337,
+                            "nonce": w3_subnet_a.eth.get_transaction_count(w3_subnet_a.toChecksumAddress(relayer_address))
+                        }
+            # Transaction 2 unsigned
+            tx_2 = franchise_2_contract.functions.executeRefund(hash).buildTransaction(transaction)
+            # Transaction 2 signed
+            signed_tx_2 = w3_subnet_b.eth.sign_transaction(tx_2, secret.relayer_private_key)
+            # Send signed_tx_2
+            final_tx_2 = w3_subnet_b.eth.send_raw_transaction(signed_tx_2.rawTransaction)
+            
 
 def releaseEscrow_executer(filter):
     """
     Function that executes in response to releaseEscrow event
     """
-    pass
+    # Pseudo-code
+    # Event will emit hash that will be used to access storage of partner
+    # subnets, main hub will no longer has associated hash data in storage
+    while True:
+        for event in filter.get_new_entries():
+            hash = event["args"]["escrowHash"]
+            # Update Alice
+            # Transaction 1 metadata
+            transaction = {
+                            "gasPrice": w3_subnet_a.eth.gas_price,
+                            "chainId": 1337,
+                            "nonce": w3_subnet_a.eth.get_transaction_count(w3_subnet_a.toChecksumAddress(relayer_address))
+                        }
+            # Create tx_1 unsigned
+            tx_1 = franchise_1_contract.functions.releaseNFT(hash).buildTransaction(transaction)
+            # Transaction 1 signed
+            signed_tx_1 = w3_subnet_a.eth.sign_transaction(tx_1, secret.relayer_private_key)
+            final_tx_1 = w3_subnet_a.eth.send_raw_transaction(signed_tx_1.rawTransaction)
+
+            # Update Bob
+            # Transaction 2 metadata
+            transaction = {
+                            "gasPrice": w3_subnet_b.eth.gas_price,
+                            "chainId": 1337,
+                            "nonce": w3_subnet_b.eth.get_transaction_count(w3_subnet_b.toChecksumAddress(relayer_address))
+                        }
+            # Create tx_2 unsigned
+            tx_2 = franchise_2_contract.functions.releaseNFT(hash).buildTransaction(transaction)
+            # Signed tx_2
+            signed_tx_2 = w3_subnet_b.eth.sign_transaction(tx_2, secret.relayer_private_key)
+            # Send signed tx_2
+            final_tx_2 = w3_subnet_b.eth.send_raw_transaction(signed_tx_2.rawTransaction)
+
 
 def newEscrow_executer(filter):
     """
@@ -147,13 +214,11 @@ def newEscrow_executer(filter):
                         }
 
             # Transaction 2 unsigned
-            tx_2 = franchise_2_contract.functions.recieveEscrowTX(hash, data_2[0], data_1[0], data_2[1], data_2[2])
+            tx_2 = franchise_2_contract.functions.recieveEscrowTX(hash, data_2[0], data_1[0], data_2[1], data_2[2]).buildTransaction(transaction)
             # Transaction 2 signed
             signed_tx_2 = w3_subnet_b.eth.sign_transaction(tx_2, secret.relayer_private_key)
             # Send signed_tx_2
             final_tx_2 = w3_subnet_b.eth.send_raw_transaction(signed_tx_2.rawTransaction)
-
-            
     
 
 def main():
@@ -161,12 +226,25 @@ def main():
     Function that when called, starts relayer program
     """
     # Create 9 Threads that run indefinitely
-    # newEscrow Thread
+    
+    # Threads to listen to Hub Subnet
     newEscrow_worker = Thread(target=newEscrow_executer, args=(newEscrow_filter,))
     releaseEscrow_worker = Thread(target=releaseEscrow_executer, args=(releaseEscrow_filter,))
     refund_worker = Thread(target=refund_executer, args=(refund_filter,))
 
-    escrowTXRecieved_1_worker = Thread()
+    # Threads to listen to Subnet A
+    nftLocked_0_worker = Thread(target=NFTLocked_executer, args=(NFTLocked_1_filter,))
+
+    # Threads to listen to Subnet B
+    nftLocked_1_worker = Thread(target=NFTLocked_executer, args=(NFTLocked_2_filter,))
+
+    newEscrow_worker.start()
+    releaseEscrow_worker.start()
+    refund_worker.start()
+
+    nftLocked_0_worker.start()
+    nftLocked_1_worker.start()
+
 
 # UNCOMMENT LINES BELOW WHEN READY TO USE RELAYER
 # if __name__ == "__main__":

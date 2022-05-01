@@ -25,17 +25,17 @@ contract Franchise {
     // Address of relayer
     address private relayer;
 
-    // Mapping of escrow transaction hashes to local user information
-    mapping(bytes32 => LocalUserInfo) private localDirectory;
+    // Mapping of escrow transaction txIDs to local user information
+    mapping(uint => LocalUserInfo) private localDirectory;
 
     // Event emitted when new escrow TX is submitted to smart contract
-    event EscrowTXRecieved(bytes32 indexed hsh);
+    event EscrowTXRecieved(uint indexed txID);
 
     // Event emitted when user locks their NFT
-    event NFTLocked(bytes32 indexed hsh, address indexed holder);
+    event NFTLocked(uint indexed txID, address indexed holder);
 
     // Event emitted when refund is complete
-    event RefundComplete(bytes32 indexed hsh);
+    event RefundComplete(uint indexed txID);
 
     modifier isRelayer() {
         require(msg.sender == relayer, "You are not the relayer!");
@@ -51,19 +51,19 @@ contract Franchise {
 
     // Function that recieves information from the Hub and adds it to contract storage.
     // Meant to be called by relayer
-    function recieveEscrowTX(bytes32 _hash, address _user, address _to, address _nftContract, uint tokenID) public isRelayer {
+    function recieveEscrowTX(uint txID, address _user, address _to, address _nftContract, uint tokenID) public isRelayer {
         // Create LocalUserInfo struct
         LocalUserInfo memory info = LocalUserInfo(_user, _to, _nftContract, tokenID, 0);
         // Put in storage
-        localDirectory[_hash] = info;
+        localDirectory[txID] = info;
         // Emit event
-        emit EscrowTXRecieved(_hash);
+        emit EscrowTXRecieved(txID);
     }
 
     // Function meant to be called by participant of 
-    function lockNFT(bytes32 _hash) public isRelayer {
+    function lockNFT(uint txID) public isRelayer {
         // Retrieve escrow TX from storage
-        LocalUserInfo memory localTX = localDirectory[_hash];
+        LocalUserInfo memory localTX = localDirectory[txID];
         // Check that msg.sender is part of escrow TX
         require(msg.sender == localTX.user, "You are not allowed to lock your NFT!");
         // Transfer NFT
@@ -72,14 +72,14 @@ contract Franchise {
         // Call safe_transfer_from method
         nftObj.safeTransferFrom(msg.sender, vault, localTX.tokenID);
         // Store that NFT was transferred
-        localDirectory[_hash].isLocked = 1;
+        localDirectory[txID].isLocked = 1;
         // Emit event that NFT was locked
-        emit NFTLocked(_hash, msg.sender);
+        emit NFTLocked(txID, msg.sender);
     }
 
-    function releaseNFT(bytes32 _hash) public isRelayer {
+    function releaseNFT(uint txID) public isRelayer {
         // Retrieve escrow TX from storage
-        LocalUserInfo memory localTX = localDirectory[_hash];
+        LocalUserInfo memory localTX = localDirectory[txID];
         // Verify that NFT is locked up
         require(localTX.isLocked != 0, "NFT has not been locked up!");
         // Tell Vault to send NFT to this smart contract
@@ -87,24 +87,23 @@ contract Franchise {
         // Send NFT to Bob
         IERC721(localTX.nftContract).safeTransferFrom(address(this), localTX.to, localTX.tokenID);
         // Delete storage
-        delete localDirectory[_hash];
+        delete localDirectory[txID];
     }
 
-    function executeRefund(bytes32 _hash) public isRelayer {
+    function executeRefund(uint txID) public isRelayer {
         // Check that escrow TX exists
-        require(localDirectory[_hash].user != address(0), "Escrow does not exist!");
+        require(localDirectory[txID].user != address(0), "Escrow does not exist!");
         // Put escrow TX to memory
-        LocalUserInfo memory localInfo = localDirectory[_hash];
+        LocalUserInfo memory localInfo = localDirectory[txID];
         // Get NFT from vault
         Vault(vault).sendNFT(localInfo.nftContract, localInfo.tokenID);
         // Send NFT back to original owner
         IERC721(localInfo.nftContract).safeTransferFrom(address(this), localInfo.user, localInfo.tokenID);
         // Delete storage
-        delete localDirectory[_hash];
+        delete localDirectory[txID];
 
         // Emit that refund was successful
-        emit RefundComplete(_hash);
-        
+        emit RefundComplete(txID);
     }
 
 }
