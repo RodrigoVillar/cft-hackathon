@@ -6,8 +6,8 @@ import { ethers } from 'ethers'
 
 import { OnboardingButton } from './components/Onboarding';
 
-import ContractArtifact from './contracts/Escrow.json'
-import contractAddress from './contracts/escrow-address.json'
+import ContractArtifact from './contracts/Franchise.json'
+import contractAddress from './contracts/franchise-address.json'
 
 
 class App extends React.Component {
@@ -45,10 +45,14 @@ class App extends React.Component {
 
   }
 
-  async initiate() {
+  async lockNFT() {//TODO
     console.log('initiating contract')
-    await this.state.contract.createEscrowTX()//TODO
+    await this.state.contract.lockNFT()
 
+  }
+
+  async setPermissions() {
+    //TODO
   }
 
   render() {
@@ -56,14 +60,16 @@ class App extends React.Component {
     return (
       <div className="App">
         <h1>Cross-Subnet NFT Escrow</h1>
-        <h2>NFTescrow on Avalanche with Subnets</h2>
+        <h2>Subnet 1</h2>
 
         <OnboardingButton onConnected={this.onConnected} />
 
         {this.state.isConnected &&
           <div>
-            <h3>Click the button to initiate escrow.</h3>
-            <button onClick={this.initiate}>Initiate Escrow</button>
+            <h3>Give escrow permission for your NFT.</h3>
+            <button onClick={this.setPermissions()}>Set Permission</button>
+            <h3>Lock your NFT with the escrow.</h3>
+            <button onClick={this.lockNFT}>Lock NFT</button>
           </div>
         }
       </div>

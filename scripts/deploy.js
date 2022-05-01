@@ -5,24 +5,24 @@ async function main() {
 
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
-  const Escrow = await ethers.getContractFactory("Escrow");
-  const escrowContract = await Escrow.deploy('0x1a08594081B5AED71de0c203AC188311a83e7aD7');
+  const Franchise = await ethers.getContractFactory("Franchise");
+  const franchiseContract = await Franchise.deploy('0x1a08594081B5AED71de0c203AC188311a83e7aD7');
 
-  console.log("Escrow address:" + escrowContract.address);
-  saveDAppFiles(escrowContract);
+  console.log("Franchise address:" + franchiseContract.address);
+  saveDAppFiles(franchiseContract);
 }
 
 // Store metadata for the dApp
 function saveDAppFiles(contract) {
   const fs = require("fs");
-  const contractsDir = __dirname + "/../frontend/src/contracts";
+  const contractsDir = __dirname + "/../subnet1frontend/src/contracts";
 
   if (!fs.existsSync(contractsDir)) {
     fs.mkdirSync(contractsDir);
   }
 
   // Store the contract address
-  const addressFileName = contractsDir + "/escrow-address.json";
+  const addressFileName = contractsDir + "/franchise-address.json";
   fs.writeFileSync(
     addressFileName,
     JSON.stringify({ Contract: contract.address }, undefined, 2)
@@ -30,8 +30,8 @@ function saveDAppFiles(contract) {
   console.log("Stored address in ", addressFileName);
 
   // Store the contract artifact (including the ABI)
-  const ContractArtifact = artifacts.readArtifactSync("Escrow");
-  const artifactFileName = contractsDir + "/Escrow.json";
+  const ContractArtifact = artifacts.readArtifactSync("Franchise");
+  const artifactFileName = contractsDir + "/Franchise.json";
   fs.writeFileSync(
     artifactFileName,
     JSON.stringify(ContractArtifact, null, 2)
