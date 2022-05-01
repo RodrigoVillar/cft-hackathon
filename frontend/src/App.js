@@ -55,7 +55,17 @@ class App extends React.Component {
   async initiate() {
     console.log('initiating contract')
     await this.state.contract.createEscrowTX()//TODO
-    //this.state.contract.once('NewEscrow', initiate());
+    this.setState({
+      isConnected: this.state.isConnected,
+      contract: this.state.contract,
+      isInitiated: true,
+      hashEvent: this.state.hashEvent,
+    })
+  }
+
+  async refund() {
+    console.log('initiating refund')
+    await this.state.contract.refund()//TODO
   }
 
   async catchEvent() {
@@ -78,7 +88,12 @@ class App extends React.Component {
         blockNumber,
       } = contractEvent;
       const { hash0 } = returnValues;
-      this.state.hashEvent = hash0;
+      this.setState({
+        isConnected: this.state.isConnected,
+        contract: this.state.contract,
+        isInitiated: this.state.isInitiated,
+        hashEvent: hash0,
+      })
     }
 
   }
@@ -101,13 +116,19 @@ class App extends React.Component {
 
         <OnboardingButton onConnected={this.onConnected} />
 
-        {this.state.isConnected &&
+        {this.state.isConnected && !this.state.isInitiated &&
           <div>
             <h3>Click the button to initiate escrow.</h3>
-            <button onClick={this.initiate}>Initiate Escrow</button>
+            <button onClick={this.initiate()}>Initiate Escrow</button>
           </div>
         }
         {this.state.isConnected && HashComponent}
+        {this.state.isConnected && this.state.isInitiated &&
+          <div>
+            <h4>Click to cancel escrow.</h4>
+            <button onClick={this.refund()}>Refund Escrow</button>
+          </div>
+        }
 
       </div>
     )
