@@ -5,7 +5,6 @@ import React from 'react'
 import { ethers } from 'ethers'
 
 import { OnboardingButton } from './components/Onboarding';
-import { IndexForm } from './components/IndexForm';
 
 
 import ContractArtifact from './contracts/Franchise.json'
@@ -54,7 +53,7 @@ class App extends React.Component {
     await this.state.contract.lockNFT(this.state.index)
   }
 
-  setIndex(num) {
+  async setIndex(num) {
     this.setState({
       isConnected: this.state.isConnected,
       contract: this.state.contract,
@@ -90,7 +89,15 @@ class App extends React.Component {
         }
         {this.state.isConnected && this.state.permission &&
           <div>
-            <IndexForm setIndex={this.setIndex} />
+            <form onSubmit={this.handleSubmit}>
+              <label>Enter the escrow index:
+                <input
+                  type="number"
+                  onChange={(e) => this.setIndex(e.target.value)}
+                />
+              </label>
+              <input type="submit" />
+            </form>
             <h3>Lock your NFT with the escrow.</h3>
             <button onClick={this.lockNFT()}>Lock NFT</button>
           </div>
