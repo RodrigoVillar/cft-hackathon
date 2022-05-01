@@ -23,7 +23,7 @@ class App extends React.Component {
       isConnected: false,
       contract: null,
       isInitiated: false,
-      hashEvent: null,
+      indexEvent: null,
     }
 
     this.onConnected = this.onConnected.bind(this)
@@ -46,7 +46,7 @@ class App extends React.Component {
       isConnected: true,
       contract,
       isInitiated: false,
-      hashEvent: null,
+      indexEvent: null,
     })
 
 
@@ -59,7 +59,7 @@ class App extends React.Component {
       isConnected: this.state.isConnected,
       contract: this.state.contract,
       isInitiated: true,
-      hashEvent: this.state.hashEvent,
+      indexEvent: this.state.indexEvent,
     })
   }
 
@@ -79,7 +79,7 @@ class App extends React.Component {
     escrowContract.events.NewEscrow(options, foo);
     function foo(err, contractEvent) {
       if (err) {
-        console.error('idk', err);
+        console.error('Event listening error', err);
         return;
       }
       const {
@@ -87,12 +87,12 @@ class App extends React.Component {
         returnValues,
         blockNumber,
       } = contractEvent;
-      const { hash0 } = returnValues;
+      const { index0 } = returnValues;
       this.setState({
         isConnected: this.state.isConnected,
         contract: this.state.contract,
         isInitiated: this.state.isInitiated,
-        hashEvent: hash0,
+        indexEvent: index0,
       })
     }
 
@@ -102,13 +102,13 @@ class App extends React.Component {
 
   render() {
 
-    const HashComponent = <div>
-      {this.state.hashEvent
-        ? <p>New escrow hash: <br />&ldquo;{this.state.hashEvent}&rdquo;</p>
+    const IndexComponent = <div>
+      {this.state.indexEvent
+        ? <p>New escrow index: <br />&ldquo;{this.state.indexEvent}&rdquo;</p>
         : <p>No new escrow yet...</p>
       }
     </div>
-    //add fallback, install things. google thing
+
     return (
       <div className="App">
         <h1>Cross-Subnet NFT Escrow</h1>
@@ -122,7 +122,7 @@ class App extends React.Component {
             <button onClick={this.initiate()}>Initiate Escrow</button>
           </div>
         }
-        {this.state.isConnected && HashComponent}
+        {this.state.isConnected && IndexComponent}
         {this.state.isConnected && this.state.isInitiated &&
           <div>
             <h4>Click to cancel escrow.</h4>

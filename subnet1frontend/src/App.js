@@ -5,6 +5,8 @@ import React from 'react'
 import { ethers } from 'ethers'
 
 import { OnboardingButton } from './components/Onboarding';
+import { IndexForm } from './components/IndexForm';
+
 
 import ContractArtifact from './contracts/Franchise.json'
 import contractAddress from './contracts/franchise-address.json'
@@ -17,7 +19,8 @@ class App extends React.Component {
     this.state = {
       isConnected: false,
       contract: null,
-      isInitiated: false
+      permission: false,
+      index: null,
     }
 
     this.onConnected = this.onConnected.bind(this)
@@ -39,7 +42,8 @@ class App extends React.Component {
     this.setState({
       isConnected: true,
       contract,
-      isInitiated: false,
+      permission: false,
+      index: this.state.index,
     })
 
 
@@ -51,8 +55,23 @@ class App extends React.Component {
 
   }
 
+  async setIndex(num) {
+    this.setState({
+      isConnected: this.state.isConnected,
+      contract: this.state.contract,
+      permission: this.state.permission,
+      index: num,
+    })
+  }
+
   async setPermissions() {
     //TODO
+    this.setState({
+      isConnected: true,
+      contract: this.state.contract,
+      permission: true,
+      index: this.state.index,
+    })
   }
 
   render() {
@@ -64,12 +83,17 @@ class App extends React.Component {
 
         <OnboardingButton onConnected={this.onConnected} />
 
-        {this.state.isConnected &&
+        {this.state.isConnected && !this.state.permission &&
           <div>
             <h3>Give escrow permission for your NFT.</h3>
             <button onClick={this.setPermissions()}>Set Permission</button>
+          </div>
+        }
+        {this.state.isConnected && this.state.permission &&
+          <div>
+            <IndexForm setIndex={this.setIndex} />
             <h3>Lock your NFT with the escrow.</h3>
-            <button onClick={this.lockNFT}>Lock NFT</button>
+            <button onClick={this.lockNFT()}>Lock NFT</button>
           </div>
         }
       </div>
