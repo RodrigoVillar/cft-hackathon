@@ -2,7 +2,10 @@
 pragma solidity ^0.8.0;
 
 /*
-Smart contract to be stored on NFTEScrow Subnet
+Smart contract to be stored on NFTEScrow Subnet. Users can create an escrow
+transaction using createEscrowTX(). Additionally, users can call refund() to
+cancel an escrow transaction and getEscrow() to get information about an escrow
+TX on a subnet. All other functions can be accessed only by relayers.
 */
 contract Escrow {
 
@@ -15,6 +18,10 @@ contract Escrow {
     }
 
     // Struct represent an escrow transaction
+    // orderOne and orderTwo represent the user information of an escrow
+    // transaction on each subnet. isReady1 and isReady2 are booleans representing
+    // whether a user has fulfilled their obligations for an escrow transaction
+    // (i.e. locking their NFTs)
     struct EscrowTX {
         UserInfo orderOne;
         UserInfo orderTwo;
@@ -29,22 +36,25 @@ contract Escrow {
     mapping(uint => EscrowTX) private escrowDirectory;
 
     // Event to be emitted when new escrow tx is initiated
-    event NewEscrow(uint indexed escrowHash);
+    event NewEscrow(uint indexed txID);
 
     // Event to be emitted when both NFTs are locked up
-    event ReleaseEscrow(uint indexed escrowHash);
+    event ReleaseEscrow(uint indexed txID);
 
     // Event to be emitted when either Alice or Bob wish to cancel the trade
-    event Refund(uint indexed escrowHash);
+    event Refund(uint indexed txID);
 
+    // Relayer that only allows for relayer to call function
     modifier isRelayer() {
         require(msg.sender == relayer, "You are not the relayer!");
         _;
     }
 
-    // Incremented each time a new transaction is made. Source of transaction ID
+    // Mapped to a unique escrow transaction. nonce is incremented after each
+    // time it is mapped to an escrow transaction
     uint private nonce;
-    // When initialized, contract sets argument as address of relayer
+
+    // When initialized, contract sets _relayer as address of relayer
     constructor(address _relayer) {
         relayer = _relayer;
     }
@@ -62,6 +72,8 @@ contract Escrow {
         nonce++;
     }
 
+    // Function that changes contract state to account for when a user has
+    // successfully locked their NFT
     function nftLocked(uint txID, address _user) public isRelayer {
         EscrowTX memory localEscrow = escrowDirectory[txID];
         require(localEscrow.orderOne.user == _user || localEscrow.orderTwo.user == _user, "Address not involved in Escrow TX!");
@@ -79,9 +91,10 @@ contract Escrow {
         }
     }
 
-    /*
-    Function to call if either Alice or Bob want to call of the transaction
-    */
+    // Function that when called, cancels an escrow transaction. This function
+    // is meant to be called by one of two users of a transactions. Each users
+    // respective NFT is released from their respective vaults and returned to
+    // their original owners
     function refund(uint txID) public {
         // Check that escrow TX exists
         require(escrowDirectory[txID].orderOne.user != address(0), "Invalid Hash!");
@@ -92,9 +105,9 @@ contract Escrow {
     }
 
     // Function that returns values of an escrow transaction. In particular, getEscrow 
-    // returns all values related to _orderNum. As an example, if getEscrow(0x4, 0)
+    // returns all values related to _orderNum. As an example, if getEscrow(43, 0)
     // is called, then getEscrow returns Alice's UserInfo struct along with her
-    // associated isReady boolean. Returns default values if hash is invalid
+    // associated isReady boolean. Returns default values if transaction ID is invalid
     function getEscrow(uint txID, int _orderNum) public returns(address, address, uint, int, bool) {
         // Retrieve escrow TX from memory
         EscrowTX memory _localEscrow = escrowDirectory[txID];

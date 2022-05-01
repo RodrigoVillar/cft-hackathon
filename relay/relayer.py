@@ -87,7 +87,7 @@ def NFTLocked_executer(filter, subnet):
     """
     while True:
         for event in filter.get_new_entries():
-            hash = event["args"]["escrowHash"]
+            txID = event["args"]["txID"]
             user = event["args"]["holder"]
             transaction = {
                             "gasPrice": w3_subnet_a.eth.gas_price,
@@ -95,7 +95,7 @@ def NFTLocked_executer(filter, subnet):
                             "nonce": w3_hub.eth.get_transaction_count(w3_subnet_a.toChecksumAddress(relayer_address))
                         }
             # Unsigned tx
-            tx = escrow_contract.functions.nftLocked(hash, user).buildTransaction(transaction)
+            tx = escrow_contract.functions.nftLocked(txID, user).buildTransaction(transaction)
             # Signed tx
             signed_tx = w3_hub.eth.sign_transaction(tx, secret.relayer_private_key)
             # Send signed tx
@@ -112,7 +112,7 @@ def refund_executer(filter):
     # storage
     while True:
         for event in filter.get_new_entries():
-            hash = event["args"]["escrowHash"]
+            txID = event["args"]["txID"]
             # Update Alice
             transaction = {
                             "gasPrice": w3_subnet_a.eth.gas_price,
@@ -120,7 +120,7 @@ def refund_executer(filter):
                             "nonce": w3_subnet_a.eth.get_transaction_count(w3_subnet_a.toChecksumAddress(relayer_address))
                         }
             # tx_1 unsigned
-            tx_1 = franchise_1_contract.functions.executeRefund(hash).buildTransaction(transaction)
+            tx_1 = franchise_1_contract.functions.executeRefund(txID).buildTransaction(transaction)
             # Signed tx_1
             signed_tx_1 = w3_subnet_a.eth.sign_transaction(tx_1, secret.relayer_private_key)
             # Send signed_tx_1
@@ -133,7 +133,7 @@ def refund_executer(filter):
                             "nonce": w3_subnet_a.eth.get_transaction_count(w3_subnet_a.toChecksumAddress(relayer_address))
                         }
             # Transaction 2 unsigned
-            tx_2 = franchise_2_contract.functions.executeRefund(hash).buildTransaction(transaction)
+            tx_2 = franchise_2_contract.functions.executeRefund(txID).buildTransaction(transaction)
             # Transaction 2 signed
             signed_tx_2 = w3_subnet_b.eth.sign_transaction(tx_2, secret.relayer_private_key)
             # Send signed_tx_2
@@ -149,7 +149,7 @@ def releaseEscrow_executer(filter):
     # subnets, main hub will no longer has associated hash data in storage
     while True:
         for event in filter.get_new_entries():
-            hash = event["args"]["escrowHash"]
+            txID = event["args"]["txID"]
             # Update Alice
             # Transaction 1 metadata
             transaction = {
@@ -158,7 +158,7 @@ def releaseEscrow_executer(filter):
                             "nonce": w3_subnet_a.eth.get_transaction_count(w3_subnet_a.toChecksumAddress(relayer_address))
                         }
             # Create tx_1 unsigned
-            tx_1 = franchise_1_contract.functions.releaseNFT(hash).buildTransaction(transaction)
+            tx_1 = franchise_1_contract.functions.releaseNFT(txID).buildTransaction(transaction)
             # Transaction 1 signed
             signed_tx_1 = w3_subnet_a.eth.sign_transaction(tx_1, secret.relayer_private_key)
             final_tx_1 = w3_subnet_a.eth.send_raw_transaction(signed_tx_1.rawTransaction)
@@ -171,7 +171,7 @@ def releaseEscrow_executer(filter):
                             "nonce": w3_subnet_b.eth.get_transaction_count(w3_subnet_b.toChecksumAddress(relayer_address))
                         }
             # Create tx_2 unsigned
-            tx_2 = franchise_2_contract.functions.releaseNFT(hash).buildTransaction(transaction)
+            tx_2 = franchise_2_contract.functions.releaseNFT(txID).buildTransaction(transaction)
             # Signed tx_2
             signed_tx_2 = w3_subnet_b.eth.sign_transaction(tx_2, secret.relayer_private_key)
             # Send signed tx_2
@@ -186,11 +186,11 @@ def newEscrow_executer(filter):
         for event in filter.get_new_entries():
             # Pseudo-code
             # Extract hash from event
-            hash = event["args"]["escrowHash"]
+            txID = event["args"]["txID"]
             # Call Escrow smart contract and retreive relevant data
             # Assumption that data_1, data_2 are arrays
-            data_1 = escrow_contract.functions.getEscrow(hash, 0).call()
-            data_2 = escrow_contract.functions.getEscrow(hash, 1).call()
+            data_1 = escrow_contract.functions.getEscrow(txID, 0).call()
+            data_2 = escrow_contract.functions.getEscrow(txID, 1).call()
             # Call relevant franchises and update state
 
             # Transaction 1 metadata
@@ -200,7 +200,7 @@ def newEscrow_executer(filter):
                             "nonce": w3_subnet_a.eth.get_transaction_count(w3_subnet_a.toChecksumAddress(relayer_address))
                         }
             # Transaction 1 unsigned
-            tx_1 = franchise_1_contract.functions.recieveEscrowTX(hash, data_1[0], data_2[0], data_1[1], data_1[2]).buildTransaction(transaction)
+            tx_1 = franchise_1_contract.functions.recieveEscrowTX(txID, data_1[0], data_2[0], data_1[1], data_1[2]).buildTransaction(transaction)
             # Transaction 1 signed
             signed_tx_1 = w3_subnet_a.eth.sign_transaction(tx_1, secret.relayer_private_key)
             # Send signed_tx_1
@@ -214,7 +214,7 @@ def newEscrow_executer(filter):
                         }
 
             # Transaction 2 unsigned
-            tx_2 = franchise_2_contract.functions.recieveEscrowTX(hash, data_2[0], data_1[0], data_2[1], data_2[2]).buildTransaction(transaction)
+            tx_2 = franchise_2_contract.functions.recieveEscrowTX(txID, data_2[0], data_1[0], data_2[1], data_2[2]).buildTransaction(transaction)
             # Transaction 2 signed
             signed_tx_2 = w3_subnet_b.eth.sign_transaction(tx_2, secret.relayer_private_key)
             # Send signed_tx_2

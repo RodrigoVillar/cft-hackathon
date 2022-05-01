@@ -6,7 +6,7 @@ import "../interfaces/IERC721.sol";
 
 /*
 Smart contract that lives on each subnet. Each franchise has an associated vault
-that stores the franchise's NFT (seperation of assets => better security). 
+that stores the franchise's NFT (see Vault.sol) 
 */
 contract Franchise {
 
@@ -37,12 +37,13 @@ contract Franchise {
     // Event emitted when refund is complete
     event RefundComplete(uint indexed txID);
 
+    // Modifier that only allows for relayers to call function
     modifier isRelayer() {
         require(msg.sender == relayer, "You are not the relayer!");
         _;
     }
 
-    // Constructor sets address of relayer and creates its associated vault
+    // Constructor sets address of relayer and creates Franchise's associated Vault
     constructor(address _relayer) {
         relayer = _relayer;
         Vault _vault = new Vault();
@@ -60,7 +61,9 @@ contract Franchise {
         emit EscrowTXRecieved(txID);
     }
 
-    // Function meant to be called by participant of 
+    // Function meant to be called by participant of an escrow transaction. This
+    // function requires that the user have given Franchise permission to take
+    // their NFT (ERC-721).
     function lockNFT(uint txID) public isRelayer {
         // Retrieve escrow TX from storage
         LocalUserInfo memory localTX = localDirectory[txID];
@@ -77,6 +80,8 @@ contract Franchise {
         emit NFTLocked(txID, msg.sender);
     }
 
+    // Function that when called, releases the locked NFT of a escrow
+    // transaction to the intended recipient
     function releaseNFT(uint txID) public isRelayer {
         // Retrieve escrow TX from storage
         LocalUserInfo memory localTX = localDirectory[txID];
@@ -90,6 +95,8 @@ contract Franchise {
         delete localDirectory[txID];
     }
 
+    // Function that when called, returns an NFT to its prior owner (ex. if
+    // Alice locked up her NFT, this function will give Alice back her NFT)
     function executeRefund(uint txID) public isRelayer {
         // Check that escrow TX exists
         require(localDirectory[txID].user != address(0), "Escrow does not exist!");
