@@ -14,7 +14,7 @@ contract Escrow {
         int subnet;
     }
 
-    // Struct 
+    // Struct represent an escrow transaction
     struct EscrowTX {
         UserInfo orderOne;
         UserInfo orderTwo;
