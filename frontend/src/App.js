@@ -10,7 +10,7 @@ import ContractArtifact from './contracts/Escrow.json'
 import contractAddress from './contracts/escrow-address.json'
 
 import Web3 from 'web3';
-const web3 = new Web3(Web3.givenProvider || "ws://localhost:8545");//something rpc endpoint
+const web3 = new Web3(Web3.givenProvider || "ws://localhost:9650");
 const ABI = ''; //todo
 const CONTRACT_ADDRESS = ''; //todo
 const escrowContract = '';//new Web3.Contract(ABI, CONTRACT_ADDRESS);
@@ -63,6 +63,7 @@ class App extends React.Component {
     })
   }
 
+  //TODO this needs a way to input data
   async refund() {
     console.log('initiating refund')
     await this.state.contract.refund()//TODO

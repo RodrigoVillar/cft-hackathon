@@ -49,13 +49,12 @@ class App extends React.Component {
 
   }
 
-  async lockNFT() {//TODO
+  async lockNFT() {
     console.log('initiating contract')
-    await this.state.contract.lockNFT()
-
+    await this.state.contract.lockNFT(this.state.index)
   }
 
-  async setIndex(num) {
+  setIndex(num) {
     this.setState({
       isConnected: this.state.isConnected,
       contract: this.state.contract,

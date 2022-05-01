@@ -13,21 +13,21 @@ const AVALANCHE_MAINNET_PARAMS = {
   rpcUrls: ['https://api.avax.network/ext/bc/C/rpc'],
   blockExplorerUrls: ['https://snowtrace.io/']
 }
-const AVALANCHE_TESTNET_PARAMS = {
+const AVALANCHE_SUBNET_PARAMS = {
   chainId: '0xA869',
-  chainName: 'Avalanche Testnet C-Chain',
+  chainName: 'Avalanche Subnet Game 2',
   nativeCurrency: {
     name: 'Avalanche',
     symbol: 'AVAX',
     decimals: 18
   },
-  rpcUrls: ['https://api.avax-test.network/ext/bc/C/rpc'],
-  blockExplorerUrls: ['https://testnet.snowtrace.io/']
+  rpcUrls: ['http://127.0.0.1:9650/ext/bc/2ezM2mb9s5GpthZ9P9oqb5QcofNgu8hJr9EEZLxTCorKz9Skoq/rpc'],
+  blockExplorerUrls: ['']
 }
 
 // This code uses the Avalanche Test Network. If you want to use the main network, simply
 // change this to AVALANCHE_MAINNET_PARAMS
-const AVALANCHE_NETWORK_PARAMS = AVALANCHE_TESTNET_PARAMS
+const AVALANCHE_NETWORK_PARAMS = AVALANCHE_SUBNET_PARAMS
 
 // Check if the chain id is the selected Avalanche chain id
 const isAvalancheChain = (chainId) => (
@@ -84,7 +84,7 @@ export class OnboardingButton extends React.Component {
     window.ethereum
       .request({
         method: 'wallet_addEthereumChain',
-        params: [AVALANCHE_TESTNET_PARAMS]
+        params: [AVALANCHE_SUBNET_PARAMS]
       })
   }
 
